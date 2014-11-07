@@ -189,7 +189,6 @@ void zoom_center(double zoom_factor)
 	xmax -= (xmax - xmin) / (zoom_factor * 2);
 }
 
-// TODO: make it zoom the same amount as the other one
 void zoom_out(void)
 {
 	struct zoom_level *lvl = zoom_stack_pop(&zstack);
