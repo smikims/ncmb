@@ -26,6 +26,7 @@ double ymax = 1;
 
 int iter = 100;
 int bailout = 2;
+double power = 2;
 char colors[] = " .:~#";
 
 struct zoom_stack *zstack = NULL;
@@ -35,6 +36,18 @@ int iter_color(double complex c, int max_iter, int ncolors)
 	double complex z = 0;
 	for (int i = 0; i < max_iter; ++i) {
 		z = z*z + c;
+		if (cabs(z) > bailout || i + 1 == max_iter)
+			return i % ncolors;
+	}
+
+	return 0; // shut up the compiler; we'll never get here
+}
+
+int iter_color_generic(double complex c, double power, int max_iter, int ncolors)
+{
+	double complex z = 0;
+	for (int i = 0; i < max_iter; ++i) {
+		z = cpow(z,power) + c;
 		if (cabs(z) > bailout || i + 1 == max_iter)
 			return i % ncolors;
 	}
@@ -83,16 +96,38 @@ void scrollright(void)
 	xmax += xstep;
 }
 
+void zoom_stack_push(struct zoom_stack **stk, struct zoom_level lvl)
+{
+	struct zoom_stack *newstk = malloc(sizeof(struct zoom_stack));
+	newstk->zoom_level = lvl;
+	newstk->prev = *stk;
+	*stk = newstk;
+}
+
+struct zoom_level *zoom_stack_pop(struct zoom_stack **stk)
+{
+	if (!stk || !(*stk)) return NULL;
+	struct zoom_level *ret = &((*stk)->zoom_level); // guaranteed to be the funkiest
+	*stk = (*stk)->prev;                            // pointer manipulation you've
+	return ret;                                     // seen all day
+}
+
 // TODO: fix all the fancy zoom stuff
 void hilight_rect(int start_y, int start_x, int end_y, int end_x)
 {
+	for (int i = 0; i < height; ++i) {
+		for (int j = 0; j < width; ++j) {
+			mvchgat(i, j, 1, A_NORMAL, 0, NULL);
+		}
+	}
+
 	int ay = end_y > start_y ? start_y : end_y;
 	int by = end_y > start_y ? end_y : start_y;
 	int ax = end_x > start_x ? start_x : end_x;
 	int bx = end_x > start_x ? end_x : start_x;
 	for (int i = ay; i <= by; ++i) {
 		for (int j = ax; j <= bx; ++j) {
-			mvchgat(i, j, 1, A_STANDOUT, 0, NULL);
+			mvchgat(i, j, 1, A_REVERSE, 0, NULL);
 		}
 	}
 }
@@ -104,7 +139,7 @@ void zoom(void)
 
 	bool box_select = false;
 	double old_ymin = ymin, old_ymax = ymax, old_xmin = xmin, old_xmax = xmax;
-	int ch, y, x, box_start_y, box_start_x;
+	int ch, y, x, box_start_y = 0, box_start_x = 0;
 	while (true) {
 		getyx(stdscr, y, x);
 		ch = getch();
@@ -125,6 +160,7 @@ void zoom(void)
 		case 'l':
 			move(y, ++x);
 			break;
+		// TODO: this doesn't work right
 		case KEY_BACKSPACE:
 			return;
 			break;
@@ -146,6 +182,9 @@ void zoom(void)
 				if (xmax - xmin == 0 || ymax - ymin == 0) {
 					ymin = old_ymin; ymax = old_ymax;
 					xmin = old_xmin; xmax = old_xmax;
+				} else {
+					// TODO: this doesn't seem to work right
+					zoom_stack_push(&zstack, (struct zoom_level) { ymin, ymax, xmin, xmax });
 				}
 
 				return;
@@ -161,22 +200,6 @@ void zoom(void)
 			hilight_rect(box_start_y, box_start_x, y, x);
 		refresh();
 	}
-}
-
-void zoom_stack_push(struct zoom_stack **stk, struct zoom_level lvl)
-{
-	struct zoom_stack *newstk = malloc(sizeof(struct zoom_stack));
-	newstk->zoom_level = lvl;
-	newstk->prev = *stk;
-	*stk = newstk;
-}
-
-struct zoom_level *zoom_stack_pop(struct zoom_stack **stk)
-{
-	if (!stk || !(*stk)) return NULL;
-	struct zoom_level *ret = &((*stk)->zoom_level); // guaranteed to be the funkiest
-	*stk = (*stk)->prev;                            // pointer manipulation you've
-	return ret;                                     // seen all day
 }
 
 // TODO: fix the math
