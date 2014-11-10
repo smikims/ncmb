@@ -1,4 +1,4 @@
 ncmb
 ====
 
-A fully-featured Mandelbrot set viewer, using ncurses
+A Mandelbrot set viewer utilizing the ncurses library, with scrolling and zooming

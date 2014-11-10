@@ -1,3 +1,6 @@
+// TODO: fix the bugs labeled throughout the code; add menus for changing the
+// global variables; make the selectable box zoomy thing work properly
+
 #include <stdio.h>
 #include <curses.h>
 #include <math.h>
@@ -15,6 +18,10 @@ struct zoom_stack {
 
 #define ystep ((ymax - ymin) / height)
 #define xstep ((xmax - xmin) / width)
+
+// Global variables aren't really evil here because there's going to be shared
+// mutable state and otherwise it'd be in a godlike struct, which is basically
+// the same thing.
 
 int height;
 int width;
