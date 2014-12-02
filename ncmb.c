@@ -36,8 +36,8 @@ int iter = 100;
 int bailout = 2;
 double power = 2;
 char colors[] = " .:~#";
-int big_scroll_amt_x = 20;
-int big_scroll_amt_y = 15;
+int big_scroll_x = 20;
+int big_scroll_y = 15;
 
 struct zoom_stack *zstack = NULL;
 
@@ -213,6 +213,22 @@ zoom(void)
 		case 'l':
 			move(y, ++x);
 			break;
+		case 'H':
+			for (int i = 0; i < big_scroll_x; ++i)
+				move(y, --x);
+			break;
+		case 'J':
+			for (int i = 0; i < big_scroll_y; ++i)
+				move(++y, x);
+			break;
+		case 'K':
+			for (int i = 0; i < big_scroll_y; ++i)
+				move(--y, x);
+			break;
+		case 'L':
+			for (int i = 0; i < big_scroll_x; ++i)
+				move(y, ++x);
+			break;
 		case 'z':
 			return;
 			break;
@@ -299,19 +315,19 @@ main(int argc, char *argv[])
 			scrollright();
 			break;
 		case 'H':
-			for (int i = 0; i < big_scroll_amt_x; ++i)
+			for (int i = 0; i < big_scroll_x; ++i)
 				scrollleft();
 			break;
 		case 'J':
-			for (int i = 0; i < big_scroll_amt_y; ++i)
+			for (int i = 0; i < big_scroll_y; ++i)
 				scrolldown();
 			break;
 		case 'K':
-			for (int i = 0; i < big_scroll_amt_y; ++i)
+			for (int i = 0; i < big_scroll_y; ++i)
 				scrollup();
 			break;
 		case 'L':
-			for (int i = 0; i < big_scroll_amt_x; ++i)
+			for (int i = 0; i < big_scroll_x; ++i)
 				scrollright();
 			break;
 		case '+':

@@ -1,5 +1,5 @@
 CC	:= cc
-SRC	:= mandel.c
+SRC	:= ncmb.c
 CFLAGS	:= -Wall -Wextra -pedantic-errors -ansi -lm -lcurses -std=c11
 DFLAGS	:= -g -pg -O0
 INSTALL	:= /usr/local/bin/ncmb
