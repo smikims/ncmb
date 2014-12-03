@@ -415,9 +415,11 @@ menu(void)
 		draw_menu(win, choice);
 		ch = getch();
 		switch (ch) {
+		case KEY_DOWN:
 		case 'j':
 			choice = choice + 1 >= NCHOICES ? 0 : choice + 1;
 			break;
+		case KEY_UP:
 		case 'k':
 			choice = choice - 1 < 0 ? NCHOICES - 1 : choice - 1;
 			break;
