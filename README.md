@@ -24,8 +24,8 @@ A Mandelbrot set viewer utilizing the ncurses library, with scrolling and zoomin
 **q** : quit  
 
 ##Menu mode commands
-**j,k, arrow keys** : move up and down between entries
-**m** : exit menu
-**space** : edit value (press enter when done)
-**d** : reset all variables to defaults
-**q** : quit
+**j,k, arrow keys** : move up and down between entries  
+**m** : exit menu  
+**space** : edit value (press enter when done)  
+**d** : reset all variables to defaults  
+**q** : quit  
