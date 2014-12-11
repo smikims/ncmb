@@ -1,7 +1,7 @@
 CC	:= cc
 SRC	:= ncmb.c
 CFLAGS	:= -Wall -Wextra -pedantic-errors -ansi -lm -lcurses -std=c99
-DFLAGS	:= -g -pg -O0
+DFLAGS	:= -g -O0
 INSTALL	:= /usr/local/bin/ncmb
 OUT	:= ncmb
 

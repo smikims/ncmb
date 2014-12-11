@@ -14,27 +14,28 @@ struct zoom_stack {
 	struct zoom_stack *prev;
 };
 
-enum CHOICE { XMIN, XMAX, YMIN, YMAX, COLOR, ITER, ZOOMF, BAIL, POW, XBGSCR, YBGSCR };
+enum CHOICE { XMIN, XMAX, YMIN, YMAX, COLOR, ITER, ZOOMF, BAIL, POW, XBGSCR, YBGSCR, TSF };
 
-#define MENU_HEIGHT    15
-#define MENU_WIDTH     50
-#define MENU_OFFSET_Y  3
-#define MENU_OFFSET_X  1
-#define INPUT_OFFSET   22
-#define MAX_INPUT      25
-#define NCHOICES       11
+#define MENU_CHOICES    12
+#define MENU_HEIGHT     (MENU_CHOICES + 4)
+#define MENU_WIDTH      50
+#define MENU_OFFSET_Y   3
+#define MENU_OFFSET_X   1
+#define INPUT_OFFSET    24
+#define MAX_INPUT       (MENU_WIDTH - INPUT_OFFSET - 2)
 
-#define DEF_XMIN   -2
-#define DEF_XMAX   1
-#define DEF_YMIN   -1
-#define DEF_YMAX   1
-#define DEF_ITER   100
-#define DEF_BAIL   2
-#define DEF_POW    2
-#define DEF_ZF     2
-#define DEF_COLORS " .:~#"
-#define DEF_BGSCRX 20
-#define DEF_BGSCRY 15
+#define DEF_XMIN        -2
+#define DEF_XMAX        1
+#define DEF_YMIN        -1
+#define DEF_YMAX        1
+#define DEF_ITER        250
+#define DEF_BAIL        2
+#define DEF_POW         2
+#define DEF_ZF          2
+#define DEF_COLORS      " .-:+#"
+#define DEF_BGSCRX      20
+#define DEF_BGSCRY      15
+#define DEF_TRM_SCLFACT 1.5 // our pixels aren't square...
 
 #define ystep ((ymax - ymin) / height)
 #define xstep ((xmax - xmin) / width)
@@ -52,12 +53,13 @@ double ymin            = DEF_YMIN;
 double ymax            = DEF_YMAX;
 
 int iter               = DEF_ITER;
-int bailout            = DEF_BAIL;
+double bailout         = DEF_BAIL;
 double power           = DEF_POW;
 double zoom_factor     = DEF_ZF;
 char colors[MAX_INPUT] = DEF_COLORS;
 int big_scroll_x       = DEF_BGSCRX;
 int big_scroll_y       = DEF_BGSCRY;
+double term_scale_fact = DEF_TRM_SCLFACT;
 
 struct zoom_stack *zstack = NULL;
 
@@ -184,18 +186,28 @@ zoom_in_center(void)
 {
 	zoom_stack_push(&zstack, (struct zoom_level) { ymin, ymax, xmin, xmax });
 
-	ymin += (ymax - ymin) * 0.5 * (1 - (1 / zoom_factor));
-	ymax -= (ymax - ymin) * 0.5 * (1 - (1 / zoom_factor));
-	xmin += (xmax - xmin) * 0.5 * (1 - (1 / zoom_factor));
-	xmax -= (xmax - xmin) * 0.5 * (1 - (1 / zoom_factor));
+	double xcenter = (xmin + xmax) / 2;
+	double ycenter = (ymin + ymax) / 2;
+
+	double newymin = ycenter - (ymax - ymin) / (2 * zoom_factor);
+	double newymax = ycenter + (ymax - ymin) / (2 * zoom_factor);
+	double newxmin = xcenter - (xmax - xmin) / (2 * zoom_factor);
+	double newxmax = xcenter + (xmax - xmin) / (2 * zoom_factor);
+
+	ymin = newymin; ymax = newymax; xmin = newxmin; xmax = newxmax;
 }
 
 void zoom_out_center(void)
 {
-	ymin -= 0.5 * (ymax - ymin) * (zoom_factor - 1);
-	ymax += 0.5 * (ymax - ymin) * (zoom_factor - 1);
-	xmin -= 0.5 * (xmax - xmin) * (zoom_factor - 1);
-	xmax += 0.5 * (xmax - xmin) * (zoom_factor - 1);
+	double xcenter = (xmin + xmax) / 2;
+	double ycenter = (ymin + ymax) / 2;
+
+	double newymin = ycenter - (ymax - ymin) * 0.5 * zoom_factor;
+	double newymax = ycenter + (ymax - ymin) * 0.5 * zoom_factor;
+	double newxmin = xcenter - (xmax - xmin) * 0.5 * zoom_factor;
+	double newxmax = xcenter + (xmax - xmin) * 0.5 * zoom_factor;
+
+	ymin = newymin; ymax = newymax; xmin = newxmin; xmax = newxmax;
 
 	struct zoom_level *junk = zoom_stack_pop(&zstack);
 	free(junk);
@@ -318,9 +330,11 @@ change_var(WINDOW *win, enum CHOICE choice)
 
 	echo();
 	wattr_on(win, A_REVERSE, NULL);
-	mvwgetnstr(win, MENU_OFFSET_Y + choice, INPUT_OFFSET, buf, sizeof(buf));
+	mvwgetnstr(win, MENU_OFFSET_Y + choice, INPUT_OFFSET, buf, sizeof(buf) - 1);
 	wattr_off(win, A_REVERSE, NULL);
 	noecho();
+
+	if (strlen(buf) == 0) return;
 
 	sscanf(buf, "%lf", &d);
 	sscanf(buf, "%d", &i);
@@ -336,7 +350,7 @@ change_var(WINDOW *win, enum CHOICE choice)
 	case ZOOMF: zoom_factor = d; break;
 	case POW: power = d; break;
 	case ITER: iter = i; break;
-	case BAIL: bailout = i; break;
+	case BAIL: bailout = d; break;
 	case XBGSCR: big_scroll_x = i; break;
 	case YBGSCR: big_scroll_y = i; break;
 	case COLOR: strncpy(colors, buf, MAX_INPUT - 1); break;
@@ -349,17 +363,18 @@ draw_menu(WINDOW *win, int choice)
 {
 	mvwprintw(	win, 1, 0,
 			" VARIABLES\n\n"
-			" Min x:               %f\n"
-			" Max x:               %f\n"
-			" Min y:               %f\n"
-			" Max y:               %f\n"
-			" Colors:              \'%s\'\n"
-			" Iterations:          %d\n"
-			" Zoom factor:         %f\n"
-			" Bailout value:       %d\n"
-			" Mandelbrot power:    %f\n"
-			" X big scroll amount: %d\n"
-			" Y big scroll amount: %d\n",
+			" Min x:                 %f\n"
+			" Max x:                 %f\n"
+			" Min y:                 %f\n"
+			" Max y:                 %f\n"
+			" Colors:                \'%s\'\n"
+			" Iterations:            %d\n"
+			" Zoom factor:           %f\n"
+			" Bailout value:         %f\n"
+			" Mandelbrot power:      %f\n"
+			" X big scroll amount:   %d\n"
+			" Y big scroll amount:   %d\n"
+			" Terminal scale factor: %f\n",
 			xmin,
 			xmax,
 			ymin,
@@ -370,13 +385,25 @@ draw_menu(WINDOW *win, int choice)
 			bailout,
 			power,
 			big_scroll_x,
-			big_scroll_y);
+			big_scroll_y,
+			term_scale_fact);
 
 	for (int i = 0; i < MENU_WIDTH - 2; ++i)
 		mvwchgat(win, MENU_OFFSET_Y + choice, MENU_OFFSET_X + i, 1, A_REVERSE, 0, NULL);
 
 	box(win, 0, 0);
 	wrefresh(win);
+}
+
+void
+square_up(void)
+{
+	double new_xwidth = (width / height) * (ymax - ymin);
+	double xcenter = xmin + (xmax - xmin) / 2;
+	double add_val = (new_xwidth / (2 * term_scale_fact));
+
+	xmax = xcenter + add_val;
+	xmin = xcenter - add_val;
 }
 
 void
@@ -393,8 +420,10 @@ set_defaults(void)
 	zoom_factor  = DEF_ZF;
 	big_scroll_x = DEF_BGSCRX;
 	big_scroll_y = DEF_BGSCRY;
-
+	term_scale_fact = DEF_TRM_SCLFACT;
 	strncpy(colors, DEF_COLORS, MAX_INPUT - 1);
+
+	square_up();
 
 	struct zoom_level *junk;
 	while ((junk = zoom_stack_pop(&zstack)) != NULL)
@@ -417,11 +446,11 @@ menu(void)
 		switch (ch) {
 		case KEY_DOWN:
 		case 'j':
-			choice = choice + 1 >= NCHOICES ? 0 : choice + 1;
+			choice = choice + 1 >= MENU_CHOICES ? 0 : choice + 1;
 			break;
 		case KEY_UP:
 		case 'k':
-			choice = choice - 1 < 0 ? NCHOICES - 1 : choice - 1;
+			choice = choice - 1 < 0 ? MENU_CHOICES - 1 : choice - 1;
 			break;
 		case 'm':
 			goto end;
@@ -431,6 +460,9 @@ menu(void)
 			break;
 		case 'd':
 			set_defaults();
+			break;
+		case 's':
+			square_up();
 			break;
 		case 'q':
 			ungetch('q');
@@ -447,11 +479,8 @@ end:
 }
 
 int
-main(int argc, char *argv[])
+main(void)
 {
-	(void)argc; // get rid of -Wextra warning
-	(void)argv;
-
 	// Various options everyone uses with curses
 	setlocale(LC_ALL, "");
 	initscr();
@@ -461,6 +490,8 @@ main(int argc, char *argv[])
 	intrflush(stdscr, FALSE);
 	keypad(stdscr, TRUE);
 
+	getmaxyx(stdscr, height, width);
+	square_up();
 	draw();
 
 	int ch;
@@ -518,6 +549,9 @@ main(int argc, char *argv[])
 			break;
 		case 'd':
 			set_defaults();
+			break;
+		case 's':
+			square_up();
 			break;
 		case 'q':
 			goto end;
