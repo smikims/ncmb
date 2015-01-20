@@ -278,7 +278,7 @@ zoom_box(void)
 			ungetch('q'); // Quit when we get back to main()
 			return;
 			break;
-		case ' ':
+		case '\r':
 			if (box_select) {
 				// new_ vars are needed because complex_value() uses xmin, ymin, etc.
 				double new_ymin, new_xmin, new_ymax, new_xmax;
@@ -353,6 +353,7 @@ change_var(WINDOW *win, enum CHOICE choice)
 	case BAIL: bailout = d; break;
 	case XBGSCR: big_scroll_x = i; break;
 	case YBGSCR: big_scroll_y = i; break;
+	case TSF: term_scale_fact = d; break;
 	case COLOR: strncpy(colors, buf, MAX_INPUT - 1); break;
 	default: break;
 	}
@@ -455,7 +456,7 @@ menu(void)
 		case 'm':
 			goto end;
 			break;
-		case ' ':
+		case '\r':
 			change_var(win, choice);
 			break;
 		case 'd':
