@@ -5,17 +5,17 @@ DFLAGS	:= -g -O0
 INSTALL	:= /usr/local/bin/ncmb
 OUT	:= ncmb
 
-all:	std
+all:	$(OUT)
 
-std:	$(SRC)
-	$(CC) $(CFLAGS) -O3 -o $(OUT) $?
+$(OUT):	$(SRC)
+	$(CC) $(CFLAGS) -O3 -o $@ $?
 
-clean:	$(SRC)
+clean:
 	rm -f $(OUT) gmon.out
 
 debug:	$(SRC)
 	$(CC) $(CFLAGS) $(DFLAGS) -o $(OUT) $?
 
-install: std
+install: $(OUT)
 	install $(OUT) $(INSTALL)
 	strip $(INSTALL)
