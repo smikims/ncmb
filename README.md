@@ -14,7 +14,7 @@ A Mandelbrot set viewer utilizing the ncurses library, with scrolling and zoomin
 **z** : enter zoom box select mode  
 **m** : open variable editing menu  
 **d** : reset all variables to defaults  
-**s** : square up aspect ratio
+**s** : square up aspect ratio  
 **q** : quit  
 
 ##Zoom box mode commands
@@ -27,7 +27,7 @@ A Mandelbrot set viewer utilizing the ncurses library, with scrolling and zoomin
 ##Menu mode commands
 **j,k, arrow keys** : move up and down between entries  
 **m** : exit menu  
-**return** : edit value (press enter when done)  
+**return** : edit value (press return again when done)  
 **d** : reset all variables to defaults  
 **s** : square up aspect ratio
 **q** : quit  
