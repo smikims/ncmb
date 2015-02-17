@@ -29,5 +29,5 @@ A Mandelbrot set viewer utilizing the ncurses library, with scrolling and zoomin
 **m** : exit menu  
 **return** : edit value (press return again when done)  
 **d** : reset all variables to defaults  
-**s** : square up aspect ratio
+**s** : square up aspect ratio  
 **q** : quit  
