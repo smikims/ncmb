@@ -354,7 +354,8 @@ change_var(WINDOW *win, enum CHOICE choice)
 	case XBGSCR: big_scroll_x = i; break;
 	case YBGSCR: big_scroll_y = i; break;
 	case TSF: term_scale_fact = d; break;
-	case COLOR: strncpy(colors, buf, MAX_INPUT - 1); break;
+	// TODO: check bounds
+	case COLOR: strcpy(colors, buf); break;
 	default: break;
 	}
 }
